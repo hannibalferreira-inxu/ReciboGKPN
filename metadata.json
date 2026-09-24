@@ -1,0 +1,6 @@
+{
+  "name": "Gerador de Recibos - Global Youth & GKPN",
+  "description": "Sistema ágil para geração e download de recibos oficiais em PDF com cálculo automático de valor por extenso e data atual.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

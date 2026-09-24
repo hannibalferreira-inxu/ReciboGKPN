@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+@media print {
+  /* Ocultar elementos da interface ao imprimir */
+  .no-print,
+  nav,
+  header,
+  aside,
+  button,
+  footer {
+    display: none !important;
+  }
+
+  body {
+    background-color: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #receipt-print-area {
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 auto !important;
+    padding: 20mm 15mm !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+
+  @page {
+    size: auto;
+    margin: 10mm;
+  }
+}
+
