@@ -1,10 +1,7 @@
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 
-export async function gerarReciboPDF(
-  element: HTMLElement,
-  nomeArquivo: string = 'recibo.pdf'
-): Promise<void> {
+export async function criarReciboPDFDocument(element: HTMLElement): Promise<jsPDF> {
   // Configuração para captura em alta definição (3x para textos ultra nítidos)
   const canvas = await html2canvas(element, {
     scale: 3,
@@ -61,6 +58,23 @@ export async function gerarReciboPDF(
   const posY = (pageHeight - renderHeight) / 2;
 
   pdf.addImage(imgData, 'PNG', posX, posY, renderWidth, renderHeight, undefined, 'FAST');
+  return pdf;
+}
+
+export async function gerarReciboPDFBlob(
+  element: HTMLElement
+): Promise<{ blob: Blob; url: string }> {
+  const pdf = await criarReciboPDFDocument(element);
+  const blob = pdf.output('blob');
+  const url = URL.createObjectURL(blob);
+  return { blob, url };
+}
+
+export async function gerarReciboPDF(
+  element: HTMLElement,
+  nomeArquivo: string = 'recibo.pdf'
+): Promise<void> {
+  const pdf = await criarReciboPDFDocument(element);
   pdf.save(nomeArquivo);
 }
 

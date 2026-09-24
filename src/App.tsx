@@ -22,12 +22,17 @@ import {
 } from 'lucide-react';
 import { ReceiptData, INITIAL_RECEIPT_DATA } from './types/receipt';
 import { ReceiptDocument } from './components/ReceiptDocument';
+import { PdfViewerPage } from './components/PdfViewerPage';
 import {
   valorPorExtenso,
   formatarDataPorExtenso,
   formatarMoedaBRL,
 } from './utils/numberToWordsPtBr';
-import { gerarReciboPDF, baixarReciboImagem } from './utils/pdfGenerator';
+import {
+  gerarReciboPDF,
+  gerarReciboPDFBlob,
+  baixarReciboImagem,
+} from './utils/pdfGenerator';
 
 interface HistoricoItem {
   id: string;
@@ -44,6 +49,10 @@ export default function App() {
   const [autoExtenso, setAutoExtenso] = useState(true);
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
+
+  // Modo de visualização: 'form' (página de preenchimento) ou 'pdf-page' (página com o PDF incorporado)
+  const [viewMode, setViewMode] = useState<'form' | 'pdf-page'>('form');
+  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
 
   // Inicialização do estado com a data de hoje formatada em pt-BR
   const [receiptData, setReceiptData] = useState<ReceiptData>(() => {
@@ -119,6 +128,24 @@ export default function App() {
     setReceiptData((prev) => ({ ...prev, numeroRecibo: novoNum }));
   };
 
+  // Ação principal solicitada pelo usuário:
+  // "ao clicar em gerar PDF e deve abrir uma página web com o pdf dentro"
+  const handleGerarEAbrirPaginaPDF = async () => {
+    if (!receiptRef.current) return;
+    try {
+      setIsGeneratingPdf(true);
+      const { url } = await gerarReciboPDFBlob(receiptRef.current);
+      setPdfBlobUrl(url);
+      setViewMode('pdf-page');
+      salvarNoHistorico(receiptData);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } catch (err) {
+      console.error('Erro ao gerar página web do PDF:', err);
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
   // Ação de download do PDF
   const handleDownloadPDF = async () => {
     if (!receiptRef.current) return;
@@ -190,6 +217,25 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
       estiloSublinhado: true,
     });
   };
+
+  // Se o usuário gerou o PDF, exibe a página web dedicada com o PDF dentro
+  if (viewMode === 'pdf-page' && pdfBlobUrl) {
+    return (
+      <>
+        {/* Mantém a estrutura de renderização ativa em segundo plano para reimpressão/download direto */}
+        <div className="fixed -left-[9999px] top-0 opacity-0 pointer-events-none">
+          <ReceiptDocument ref={receiptRef} data={receiptData} />
+        </div>
+        <PdfViewerPage
+          pdfUrl={pdfBlobUrl}
+          data={receiptData}
+          onVoltar={() => setViewMode('form')}
+          onDownload={handleDownloadPDF}
+          onImprimir={handleImprimir}
+        />
+      </>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col font-sans">
@@ -604,47 +650,47 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
 
               {/* BOTÕES DE AÇÃO PRINCIPAIS */}
               <div className="pt-3 space-y-2.5">
-                {/* Botão de Destaque: Gerar e Baixar PDF */}
+                {/* Botão de Destaque: Gerar PDF e Abrir Página com o PDF dentro */}
                 <button
                   type="button"
-                  onClick={handleDownloadPDF}
+                  onClick={handleGerarEAbrirPaginaPDF}
                   disabled={isGeneratingPdf}
-                  className="w-full py-3 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+                  className="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75"
                 >
                   {isGeneratingPdf ? (
                     <>
                       <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Gerando documento em PDF...</span>
+                      <span>Gerando página com o PDF...</span>
                     </>
                   ) : (
                     <>
-                      <Download className="w-5 h-5" />
-                      <span>Gerar e Baixar PDF</span>
+                      <FileText className="w-5 h-5" />
+                      <span>Gerar PDF (Abrir Página com o PDF)</span>
                     </>
                   )}
                 </button>
 
-                {/* Linha com Imprimir e Opções Rápidas */}
+                {/* Linha com Baixar Direto e Imprimir */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={handleImprimir}
+                    onClick={handleDownloadPDF}
+                    disabled={isGeneratingPdf}
                     className="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Abre a tela de impressão do navegador ou Salvar como PDF"
+                    title="Baixar diretamente o arquivo .PDF"
                   >
-                    <Printer className="w-4 h-4" />
-                    <span>Imprimir / Salvar</span>
+                    <Download className="w-4 h-4 text-orange-400" />
+                    <span>Baixar Direto</span>
                   </button>
 
                   <button
                     type="button"
-                    onClick={handleDownloadImagem}
-                    disabled={isGeneratingPdf}
+                    onClick={handleImprimir}
                     className="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Baixar imagem PNG para WhatsApp ou Email"
+                    title="Abre a tela de impressão do navegador ou Salvar como PDF"
                   >
-                    <Download className="w-4 h-4 text-slate-500" />
-                    <span>Baixar Imagem</span>
+                    <Printer className="w-4 h-4 text-slate-500" />
+                    <span>Imprimir</span>
                   </button>
                 </div>
 
@@ -702,19 +748,28 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
 
             <div className="flex items-center gap-2">
               <button
+                onClick={handleGerarEAbrirPaginaPDF}
+                disabled={isGeneratingPdf}
+                className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+                title="Gera o PDF e abre a página de visualização"
+              >
+                <FileText className="w-3.5 h-3.5" />
+                <span>Página do PDF</span>
+              </button>
+              <button
                 onClick={handleDownloadPDF}
                 disabled={isGeneratingPdf}
-                className="lg:hidden px-3 py-1.5 bg-orange-600 text-white rounded-lg font-semibold flex items-center gap-1"
+                className="hidden sm:flex px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium items-center gap-1.5 transition-colors cursor-pointer"
               >
-                <Download className="w-3.5 h-3.5" />
-                Baixar PDF
+                <Download className="w-3.5 h-3.5 text-orange-400" />
+                <span>Baixar</span>
               </button>
               <button
                 onClick={handleImprimir}
-                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1.5"
+                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" />
-                Imprimir
+                <span>Imprimir</span>
               </button>
             </div>
           </div>
