@@ -1,8 +1,8 @@
 import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas-pro';
 
 export async function criarReciboPDFDocument(element: HTMLElement): Promise<jsPDF> {
-  // Configuração para captura em alta definição (3x para textos ultra nítidos)
+  // Configuração para captura em alta definição com html2canvas-pro (com total suporte a oklch)
   const canvas = await html2canvas(element, {
     scale: 3,
     useCORS: true,
@@ -10,26 +10,36 @@ export async function criarReciboPDFDocument(element: HTMLElement): Promise<jsPD
     backgroundColor: '#ffffff',
     windowWidth: 1024,
     onclone: (clonedDoc) => {
-      // Garante que o elemento clonado esteja com fundo branco e visível
+      // Garante que o elemento clonado esteja perfeitamente estilizado e com cores sRGB seguras
       const clonedElement = clonedDoc.getElementById('receipt-print-area');
       if (clonedElement) {
         clonedElement.style.boxShadow = 'none';
         clonedElement.style.margin = '0 auto';
         clonedElement.style.border = 'none';
         clonedElement.style.width = '850px';
+        clonedElement.style.backgroundColor = '#ffffff';
+        clonedElement.style.color = '#000000';
       }
+
+      // Adiciona regra de segurança de estilos no documento clonado para compatibilidade máxima
+      const styleEl = clonedDoc.createElement('style');
+      styleEl.innerHTML = `
+        #receipt-print-area, #receipt-print-area * {
+          border-color: #000000;
+        }
+      `;
+      clonedDoc.head.appendChild(styleEl);
     },
   });
 
   const imgData = canvas.toDataURL('image/png', 1.0);
 
-  // Formato A4 em paisagem (landscape) ou retrato conforme a proporção
+  // Formato A4 em paisagem (landscape) para encaixar perfeitamente o recibo
   const imgWidth = canvas.width;
   const imgHeight = canvas.height;
   const aspectRatio = imgWidth / imgHeight;
 
-  // Cria documento PDF em formato A4 Paisagem para encaixar o recibo
-  const isLandscape = aspectRatio > 1.2;
+  const isLandscape = aspectRatio > 1.15;
   const pdf = new jsPDF({
     orientation: isLandscape ? 'landscape' : 'portrait',
     unit: 'mm',

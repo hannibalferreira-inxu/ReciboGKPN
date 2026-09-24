@@ -80,11 +80,11 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
                 Recebemos de Igreja
               </span>
               {data.estiloSublinhado ? (
-                <span className="font-semibold border-b border-black/80 px-2 pb-0.5 inline-block min-w-[260px] flex-1 text-slate-900 break-words">
+                <span className="font-semibold border-b border-black px-2 pb-0.5 inline-block min-w-[260px] flex-1 text-black break-words">
                   {data.igrejaCnpj || '______________________________________'}
                 </span>
               ) : (
-                <span className="font-semibold text-slate-900 flex-1 px-1 break-words">
+                <span className="font-semibold text-black flex-1 px-1 break-words">
                   {data.igrejaCnpj || '[nome e cnpj]'}
                 </span>
               )}
@@ -97,13 +97,13 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
                 a quantia de
               </span>
               {data.estiloSublinhado ? (
-                <span className="font-semibold border-b border-black/80 px-2 pb-0.5 inline-block min-w-[260px] flex-1 text-slate-900 italic break-words">
+                <span className="font-semibold border-b border-black px-2 pb-0.5 inline-block min-w-[260px] flex-1 text-black italic break-words">
                   {data.valorExtenso
                     ? `(${data.valorExtenso})`
                     : '____________________________________________________________'}
                 </span>
               ) : (
-                <span className="font-semibold text-slate-900 italic flex-1 px-1 break-words">
+                <span className="font-semibold text-black italic flex-1 px-1 break-words">
                   {data.valorExtenso ? `(${data.valorExtenso})` : '[valor por extenso]'}
                 </span>
               )}
@@ -115,11 +115,11 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
                 referente a inscrição no evento:
               </span>
               {data.estiloSublinhado ? (
-                <span className="font-semibold border-b border-black/80 px-2 pb-0.5 inline-block min-w-[220px] flex-1 text-slate-900 break-words">
+                <span className="font-semibold border-b border-black px-2 pb-0.5 inline-block min-w-[220px] flex-1 text-black break-words">
                   {data.nomeEvento || '______________________________'}
                 </span>
               ) : (
-                <span className="font-semibold text-slate-900 flex-1 px-1 break-words">
+                <span className="font-semibold text-black flex-1 px-1 break-words">
                   {data.nomeEvento || '[evento]'}
                 </span>
               )}
@@ -133,7 +133,7 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
               <div className="text-xl sm:text-2xl font-bold tracking-tight text-black">
                 {data.nomeSignatario || 'Elias Dantas'}
               </div>
-              <div className="text-sm sm:text-base font-normal text-slate-800">
+              <div className="text-sm sm:text-base font-normal text-black">
                 {data.cargoSignatario || 'Coordenador Internacional'}
               </div>
             </div>
