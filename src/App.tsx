@@ -778,6 +778,11 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
         </section>
       </main>
 
+      {/* RODAPÉ DISCRETO */}
+      <footer className="no-print mt-auto py-4 text-center text-[11px] text-slate-400">
+        <p>Versão 1 &bull; gentilmente desenvolvido pela InChurch by Hannibal - CS team</p>
+      </footer>
+
       {/* MODAL DE HISTÓRICO DE RECIBOS RECENTES */}
       {showHistoricoModal && (
         <div className="no-print fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">

@@ -149,6 +149,11 @@ Signatário: ${data.nomeSignatario} (${data.cargoSignatario})`;
           </div>
         </div>
       </main>
+
+      {/* RODAPÉ DISCRETO */}
+      <footer className="no-print mt-auto py-3 text-center text-[11px] text-slate-500">
+        <p>Versão 1 &bull; gentilmente desenvolvido pela InChurch by Hannibal - CS team</p>
+      </footer>
     </div>
   );
 };
