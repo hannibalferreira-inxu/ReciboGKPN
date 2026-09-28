@@ -1,6 +1,5 @@
 import React, { forwardRef } from 'react';
 import { ReceiptData } from '../types/receipt';
-import { GKPNLogo, GlobalYouthLogo } from './ReceiptLogos';
 import { formatarMoedaBRL } from '../utils/numberToWordsPtBr';
 
 interface ReceiptDocumentProps {
@@ -24,31 +23,35 @@ export const ReceiptDocument = forwardRef<HTMLDivElement, ReceiptDocumentProps>(
           fontFamily: '"Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
         }}
       >
-        {/* CABEÇALHO COM LOGOTIPOS IDÊNTICOS AO MODELO */}
+        {/* CABEÇALHO COM OS LOGOTIPOS OFICIAIS (GYM E GKPN) */}
         <div className="flex items-center justify-between gap-6 pb-6 px-1">
-          {/* Logo 1: Global Youth Movement */}
-          <div className="flex-1 flex items-center justify-start">
+          {/* Logo 1: Global Youth Movement (Esquerda) */}
+          <div className="flex-1 flex items-center justify-start min-h-[64px]">
             {data.logoEsquerdaUrl ? (
               <img
                 src={data.logoEsquerdaUrl}
                 alt="Global Youth Movement"
-                className="max-h-16 w-auto object-contain"
+                className="max-h-16 w-auto object-contain select-none"
               />
             ) : (
-              <GlobalYouthLogo className="h-14 sm:h-16" />
+              <div className="border border-dashed border-slate-300 text-slate-400 text-[11px] px-3 py-2 rounded text-center print:border-none print:text-transparent">
+                [Logo GYM]
+              </div>
             )}
           </div>
 
-          {/* Logo 2: Global Kingdom Partnerships Network */}
-          <div className="flex-1 flex items-center justify-end">
+          {/* Logo 2: Global Kingdom Partnerships Network (Direita) */}
+          <div className="flex-1 flex items-center justify-end min-h-[64px]">
             {data.logoDireitaUrl ? (
               <img
                 src={data.logoDireitaUrl}
                 alt="Global Kingdom Partnerships Network"
-                className="max-h-16 w-auto object-contain"
+                className="max-h-16 w-auto object-contain select-none"
               />
             ) : (
-              <GKPNLogo className="h-14 sm:h-16" />
+              <div className="border border-dashed border-slate-300 text-slate-400 text-[11px] px-3 py-2 rounded text-center print:border-none print:text-transparent">
+                [Logo GKPN]
+              </div>
             )}
           </div>
         </div>

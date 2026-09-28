@@ -23,6 +23,7 @@ import {
 import { ReceiptData, INITIAL_RECEIPT_DATA } from './types/receipt';
 import { ReceiptDocument } from './components/ReceiptDocument';
 import { ReceiptViewerPage } from './components/ReceiptViewerPage';
+import { LogosManager } from './components/LogosManager';
 import {
   valorPorExtenso,
   formatarDataPorExtenso,
@@ -314,10 +315,18 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6">
         {/* COLUNA ESQUERDA: FORMULÁRIO DE ENTRADA (Oculta na impressão) */}
         <section
-          className={`no-print lg:w-[420px] xl:w-[460px] shrink-0 ${
+          className={`no-print lg:w-[420px] xl:w-[460px] shrink-0 space-y-4 ${
             activeTab === 'preview' ? 'hidden lg:block' : 'block'
           }`}
         >
+          {/* GERENCIADOR DE LOGOTIPOS REAIS OFICIAIS */}
+          <LogosManager
+            logoEsquerdaUrl={receiptData.logoEsquerdaUrl}
+            logoDireitaUrl={receiptData.logoDireitaUrl}
+            onAtualizarLogoEsquerda={handleAtualizarLogoEsquerda}
+            onAtualizarLogoDireita={handleAtualizarLogoDireita}
+          />
+
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
             {/* Título do Card */}
             <div className="p-5 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
@@ -574,81 +583,6 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                         }
                         className="rounded text-orange-600 focus:ring-orange-500 w-4 h-4 cursor-pointer"
                       />
-                    </div>
-
-                    {/* Personalização / Upload de Logotipos (Fixo e persistente) */}
-                    <div className="pt-2 border-t border-slate-200 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="block text-xs font-semibold text-slate-700">
-                          Logos do Cabeçalho
-                        </span>
-                        <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-medium">
-                          Salvo automaticamente
-                        </span>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2 text-[11px]">
-                        <div>
-                          <label className="block text-slate-600 mb-0.5">Logo Global Youth</label>
-                          <label className="flex items-center justify-center p-2 bg-white border border-dashed border-slate-300 rounded hover:border-orange-500 cursor-pointer text-slate-600 text-[10px]">
-                            <span>{receiptData.logoEsquerdaUrl ? 'Trocar Logo' : 'Enviar Imagem'}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = () => {
-                                    handleAtualizarLogoEsquerda(reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                          </label>
-                          {receiptData.logoEsquerdaUrl && (
-                            <button
-                              type="button"
-                              onClick={() => handleAtualizarLogoEsquerda(undefined)}
-                              className="text-[10px] text-red-600 hover:underline mt-0.5"
-                            >
-                              Restaurar padrão
-                            </button>
-                          )}
-                        </div>
-
-                        <div>
-                          <label className="block text-slate-600 mb-0.5">Logo GKPN</label>
-                          <label className="flex items-center justify-center p-2 bg-white border border-dashed border-slate-300 rounded hover:border-orange-500 cursor-pointer text-slate-600 text-[10px]">
-                            <span>{receiptData.logoDireitaUrl ? 'Trocar Logo' : 'Enviar Imagem'}</span>
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  const reader = new FileReader();
-                                  reader.onload = () => {
-                                    handleAtualizarLogoDireita(reader.result as string);
-                                  };
-                                  reader.readAsDataURL(file);
-                                }
-                              }}
-                            />
-                          </label>
-                          {receiptData.logoDireitaUrl && (
-                            <button
-                              type="button"
-                              onClick={() => handleAtualizarLogoDireita(undefined)}
-                              className="text-[10px] text-red-600 hover:underline mt-0.5"
-                            >
-                              Restaurar padrão
-                            </button>
-                          )}
-                        </div>
-                      </div>
                     </div>
                   </div>
                 )}

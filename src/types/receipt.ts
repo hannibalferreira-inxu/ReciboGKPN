@@ -26,4 +26,6 @@ export const INITIAL_RECEIPT_DATA: ReceiptData = {
   nomeSignatario: 'Elias Dantas',
   cargoSignatario: 'Coordenador Internacional',
   estiloSublinhado: true,
+  logoEsquerdaUrl: undefined,
+  logoDireitaUrl: undefined,
 };
