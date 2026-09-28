@@ -22,17 +22,13 @@ import {
 } from 'lucide-react';
 import { ReceiptData, INITIAL_RECEIPT_DATA } from './types/receipt';
 import { ReceiptDocument } from './components/ReceiptDocument';
-import { PdfViewerPage } from './components/PdfViewerPage';
+import { ReceiptViewerPage } from './components/ReceiptViewerPage';
 import {
   valorPorExtenso,
   formatarDataPorExtenso,
   formatarMoedaBRL,
 } from './utils/numberToWordsPtBr';
-import {
-  gerarReciboPDF,
-  gerarReciboPDFBlob,
-  baixarReciboImagem,
-} from './utils/pdfGenerator';
+import { baixarReciboImagem } from './utils/pdfGenerator';
 
 interface HistoricoItem {
   id: string;
@@ -42,7 +38,7 @@ interface HistoricoItem {
 
 export default function App() {
   const receiptRef = useRef<HTMLDivElement>(null);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isDownloadingImage, setIsDownloadingImage] = useState(false);
   const [copiedAlert, setCopiedAlert] = useState(false);
   const [activeTab, setActiveTab] = useState<'form' | 'preview'>('form');
   const [showConfigAvancada, setShowConfigAvancada] = useState(false);
@@ -50,21 +46,59 @@ export default function App() {
   const [historico, setHistorico] = useState<HistoricoItem[]>([]);
   const [showHistoricoModal, setShowHistoricoModal] = useState(false);
 
-  // Modo de visualização: 'form' (página de preenchimento) ou 'pdf-page' (página com o PDF incorporado)
-  const [viewMode, setViewMode] = useState<'form' | 'pdf-page'>('form');
-  const [pdfBlobUrl, setPdfBlobUrl] = useState<string | null>(null);
+  // Modo de visualização: 'form' (formulário de edição) ou 'receipt-view' (recibo pronto visualizado)
+  const [viewMode, setViewMode] = useState<'form' | 'receipt-view'>('form');
 
-  // Inicialização do estado com a data de hoje formatada em pt-BR
+  // Inicialização do estado com a data de hoje formatada em pt-BR e logos salvos no localStorage
   const [receiptData, setReceiptData] = useState<ReceiptData>(() => {
     const hojeIso = new Date().toISOString().split('T')[0];
     const dataFormatada = formatarDataPorExtenso(hojeIso);
+    let logoEsquerda: string | undefined = undefined;
+    let logoDireita: string | undefined = undefined;
+    try {
+      logoEsquerda = localStorage.getItem('recibo_logo_esquerda') || undefined;
+      logoDireita = localStorage.getItem('recibo_logo_direita') || undefined;
+    } catch {
+      // Ignora erro de storage
+    }
+
     return {
       ...INITIAL_RECEIPT_DATA,
       dataEmissao: hojeIso,
       dataTextoFormatada: dataFormatada,
       valorExtenso: valorPorExtenso(INITIAL_RECEIPT_DATA.valor),
+      logoEsquerdaUrl: logoEsquerda,
+      logoDireitaUrl: logoDireita,
     };
   });
+
+  // Salvar logo esquerdo de forma persistente até ser substituído
+  const handleAtualizarLogoEsquerda = (url?: string) => {
+    setReceiptData((prev) => ({ ...prev, logoEsquerdaUrl: url }));
+    try {
+      if (url) {
+        localStorage.setItem('recibo_logo_esquerda', url);
+      } else {
+        localStorage.removeItem('recibo_logo_esquerda');
+      }
+    } catch (e) {
+      console.error('Erro ao salvar logo esquerdo no localStorage:', e);
+    }
+  };
+
+  // Salvar logo direito de forma persistente até ser substituído
+  const handleAtualizarLogoDireita = (url?: string) => {
+    setReceiptData((prev) => ({ ...prev, logoDireitaUrl: url }));
+    try {
+      if (url) {
+        localStorage.setItem('recibo_logo_direita', url);
+      } else {
+        localStorage.removeItem('recibo_logo_direita');
+      }
+    } catch (e) {
+      console.error('Erro ao salvar logo direito no localStorage:', e);
+    }
+  };
 
   // Carregar histórico local
   useEffect(() => {
@@ -128,54 +162,28 @@ export default function App() {
     setReceiptData((prev) => ({ ...prev, numeroRecibo: novoNum }));
   };
 
-  // Ação principal solicitada pelo usuário:
-  // "ao clicar em gerar PDF e deve abrir uma página web com o pdf dentro"
-  const handleGerarEAbrirPaginaPDF = async () => {
-    if (!receiptRef.current) return;
-    try {
-      setIsGeneratingPdf(true);
-      const { url } = await gerarReciboPDFBlob(receiptRef.current);
-      setPdfBlobUrl(url);
-      setViewMode('pdf-page');
-      salvarNoHistorico(receiptData);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } catch (err) {
-      console.error('Erro ao gerar página web do PDF:', err);
-    } finally {
-      setIsGeneratingPdf(false);
-    }
+  // Ação principal: Gerar Recibo e abrir tela de visualização real
+  const handleGerarRecibo = () => {
+    salvarNoHistorico(receiptData);
+    setViewMode('receipt-view');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Ação de download do PDF
-  const handleDownloadPDF = async () => {
-    if (!receiptRef.current) return;
-    try {
-      setIsGeneratingPdf(true);
-      const nomeLimpo = (receiptData.igrejaCnpj || 'igreja')
-        .replace(/[^a-zA-Z0-9]/g, '_')
-        .substring(0, 20);
-      const nomeArquivo = `Recibo_${receiptData.numeroRecibo || 'sem_num'}_${nomeLimpo}.pdf`;
-      await gerarReciboPDF(receiptRef.current, nomeArquivo);
-      salvarNoHistorico(receiptData);
-    } catch (err) {
-      console.error('Erro ao gerar PDF:', err);
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
-  // Ação de download como imagem
+  // Ação de download como imagem PNG do arquivo visualizado
   const handleDownloadImagem = async () => {
     if (!receiptRef.current) return;
     try {
-      setIsGeneratingPdf(true);
-      const nomeArquivo = `Recibo_${receiptData.numeroRecibo || 'recibo'}.png`;
+      setIsDownloadingImage(true);
+      const nomeLimpo = (receiptData.igrejaCnpj || 'igreja')
+        .replace(/[^a-zA-Z0-9]/g, '_')
+        .substring(0, 20);
+      const nomeArquivo = `Recibo_${receiptData.numeroRecibo || 'gkpn'}_${nomeLimpo}.png`;
       await baixarReciboImagem(receiptRef.current, nomeArquivo);
       salvarNoHistorico(receiptData);
     } catch (err) {
       console.error('Erro ao baixar imagem:', err);
     } finally {
-      setIsGeneratingPdf(false);
+      setIsDownloadingImage(false);
     }
   };
 
@@ -200,10 +208,10 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
     });
   };
 
-  // Preencher com dados de exemplo
+  // Preencher com dados de exemplo (preservando os logotipos salvos)
   const handleCarregarExemplo = () => {
     const hojeIso = new Date().toISOString().split('T')[0];
-    setReceiptData({
+    setReceiptData((prev) => ({
       numeroRecibo: '2026048',
       valor: 2500,
       valorExtenso: valorPorExtenso(2500),
@@ -215,25 +223,22 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
       nomeSignatario: 'Elias Dantas',
       cargoSignatario: 'Coordenador Internacional',
       estiloSublinhado: true,
-    });
+      logoEsquerdaUrl: prev.logoEsquerdaUrl,
+      logoDireitaUrl: prev.logoDireitaUrl,
+    }));
   };
 
-  // Se o usuário gerou o PDF, exibe a página web dedicada com o PDF dentro
-  if (viewMode === 'pdf-page' && pdfBlobUrl) {
+  // Se o usuário gerou o recibo, exibe a página de visualização dedicada 100% nativa
+  if (viewMode === 'receipt-view') {
     return (
-      <>
-        {/* Mantém a estrutura de renderização ativa em segundo plano para reimpressão/download direto */}
-        <div className="fixed -left-[9999px] top-0 opacity-0 pointer-events-none">
-          <ReceiptDocument ref={receiptRef} data={receiptData} />
-        </div>
-        <PdfViewerPage
-          pdfUrl={pdfBlobUrl}
-          data={receiptData}
-          onVoltar={() => setViewMode('form')}
-          onDownload={handleDownloadPDF}
-          onImprimir={handleImprimir}
-        />
-      </>
+      <ReceiptViewerPage
+        data={receiptData}
+        receiptRef={receiptRef}
+        onVoltar={() => setViewMode('form')}
+        onImprimir={handleImprimir}
+        onBaixarImagem={handleDownloadImagem}
+        isDownloadingImage={isDownloadingImage}
+      />
     );
   }
 
@@ -328,12 +333,14 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
               <button
                 onClick={() => {
                   const hojeIso = new Date().toISOString().split('T')[0];
-                  setReceiptData({
+                  setReceiptData((prev) => ({
                     ...INITIAL_RECEIPT_DATA,
                     dataEmissao: hojeIso,
                     dataTextoFormatada: formatarDataPorExtenso(hojeIso),
                     valorExtenso: valorPorExtenso(INITIAL_RECEIPT_DATA.valor),
-                  });
+                    logoEsquerdaUrl: prev.logoEsquerdaUrl,
+                    logoDireitaUrl: prev.logoDireitaUrl,
+                  }));
                 }}
                 className="text-xs text-slate-400 hover:text-slate-700 flex items-center gap-1 p-1"
                 title="Redefinir formulário"
@@ -569,11 +576,16 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                       />
                     </div>
 
-                    {/* Personalização / Upload de Logotipos */}
+                    {/* Personalização / Upload de Logotipos (Fixo e persistente) */}
                     <div className="pt-2 border-t border-slate-200 space-y-2">
-                      <span className="block text-xs font-semibold text-slate-700">
-                        Logos do Cabeçalho (Padrão Oficial Carregado)
-                      </span>
+                      <div className="flex items-center justify-between">
+                        <span className="block text-xs font-semibold text-slate-700">
+                          Logos do Cabeçalho
+                        </span>
+                        <span className="text-[10px] text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded font-medium">
+                          Salvo automaticamente
+                        </span>
+                      </div>
                       <div className="grid grid-cols-2 gap-2 text-[11px]">
                         <div>
                           <label className="block text-slate-600 mb-0.5">Logo Global Youth</label>
@@ -588,10 +600,7 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                                 if (file) {
                                   const reader = new FileReader();
                                   reader.onload = () => {
-                                    setReceiptData((prev) => ({
-                                      ...prev,
-                                      logoEsquerdaUrl: reader.result as string,
-                                    }));
+                                    handleAtualizarLogoEsquerda(reader.result as string);
                                   };
                                   reader.readAsDataURL(file);
                                 }
@@ -601,7 +610,7 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                           {receiptData.logoEsquerdaUrl && (
                             <button
                               type="button"
-                              onClick={() => setReceiptData((prev) => ({ ...prev, logoEsquerdaUrl: undefined }))}
+                              onClick={() => handleAtualizarLogoEsquerda(undefined)}
                               className="text-[10px] text-red-600 hover:underline mt-0.5"
                             >
                               Restaurar padrão
@@ -622,10 +631,7 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                                 if (file) {
                                   const reader = new FileReader();
                                   reader.onload = () => {
-                                    setReceiptData((prev) => ({
-                                      ...prev,
-                                      logoDireitaUrl: reader.result as string,
-                                    }));
+                                    handleAtualizarLogoDireita(reader.result as string);
                                   };
                                   reader.readAsDataURL(file);
                                 }
@@ -635,7 +641,7 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
                           {receiptData.logoDireitaUrl && (
                             <button
                               type="button"
-                              onClick={() => setReceiptData((prev) => ({ ...prev, logoDireitaUrl: undefined }))}
+                              onClick={() => handleAtualizarLogoDireita(undefined)}
                               className="text-[10px] text-red-600 hover:underline mt-0.5"
                             >
                               Restaurar padrão
@@ -650,46 +656,36 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
 
               {/* BOTÕES DE AÇÃO PRINCIPAIS */}
               <div className="pt-3 space-y-2.5">
-                {/* Botão de Destaque: Gerar PDF e Abrir Página com o PDF dentro */}
+                {/* Botão de Destaque: Gerar Recibo (Abre no visualizador com o botão de imprimir) */}
                 <button
                   type="button"
-                  onClick={handleGerarEAbrirPaginaPDF}
-                  disabled={isGeneratingPdf}
-                  className="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-75"
+                  onClick={handleGerarRecibo}
+                  className="w-full py-3.5 px-4 bg-orange-600 hover:bg-orange-700 active:bg-orange-800 text-white font-bold text-sm sm:text-base rounded-xl shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2.5 cursor-pointer"
                 >
-                  {isGeneratingPdf ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Gerando página com o PDF...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-5 h-5" />
-                      <span>Gerar PDF (Abrir Página com o PDF)</span>
-                    </>
-                  )}
+                  <FileText className="w-5 h-5" />
+                  <span>Gerar Recibo</span>
                 </button>
 
-                {/* Linha com Baixar Direto e Imprimir */}
+                {/* Linha com Baixar Imagem e Imprimir */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
-                    onClick={handleDownloadPDF}
-                    disabled={isGeneratingPdf}
-                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Baixar diretamente o arquivo .PDF"
+                    onClick={handleDownloadImagem}
+                    disabled={isDownloadingImage}
+                    className="py-2.5 px-3 bg-slate-800 hover:bg-slate-900 text-white font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-70"
+                    title="Baixar diretamente como imagem PNG do arquivo visualizado"
                   >
                     <Download className="w-4 h-4 text-orange-400" />
-                    <span>Baixar Direto</span>
+                    <span>{isDownloadingImage ? 'Baixando...' : 'Baixar Imagem'}</span>
                   </button>
 
                   <button
                     type="button"
                     onClick={handleImprimir}
-                    className="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+                    className="py-2.5 px-3 bg-white hover:bg-slate-50 border border-slate-300 text-slate-700 font-semibold text-xs sm:text-sm rounded-xl transition-colors flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
                     title="Abre a tela de impressão do navegador ou Salvar como PDF"
                   >
-                    <Printer className="w-4 h-4 text-slate-500" />
+                    <Printer className="w-4 h-4 text-slate-600" />
                     <span>Imprimir</span>
                   </button>
                 </div>
@@ -748,27 +744,28 @@ ASSINATURA: ${receiptData.nomeSignatario} - ${receiptData.cargoSignatario}`;
 
             <div className="flex items-center gap-2">
               <button
-                onClick={handleGerarEAbrirPaginaPDF}
-                disabled={isGeneratingPdf}
+                onClick={handleGerarRecibo}
                 className="px-3 py-1.5 bg-orange-600 hover:bg-orange-700 text-white rounded-lg font-semibold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
-                title="Gera o PDF e abre a página de visualização"
+                title="Gera o recibo e abre o visualizador"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Página do PDF</span>
+                <span>Gerar Recibo</span>
               </button>
               <button
-                onClick={handleDownloadPDF}
-                disabled={isGeneratingPdf}
-                className="hidden sm:flex px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium items-center gap-1.5 transition-colors cursor-pointer"
+                onClick={handleDownloadImagem}
+                disabled={isDownloadingImage}
+                className="hidden sm:flex px-3 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg font-medium items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-70"
+                title="Baixar como imagem PNG do documento visualizado"
               >
                 <Download className="w-3.5 h-3.5 text-orange-400" />
-                <span>Baixar</span>
+                <span>{isDownloadingImage ? 'Baixando...' : 'Baixar Imagem'}</span>
               </button>
               <button
                 onClick={handleImprimir}
-                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-white border border-slate-300 text-slate-700 rounded-lg hover:bg-slate-50 font-medium flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Enviar comando de impressão para o navegador"
               >
-                <Printer className="w-3.5 h-3.5" />
+                <Printer className="w-3.5 h-3.5 text-slate-600" />
                 <span>Imprimir</span>
               </button>
             </div>

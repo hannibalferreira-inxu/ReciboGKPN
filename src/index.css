@@ -14,29 +14,48 @@
   header,
   aside,
   button,
-  footer {
+  footer,
+  input,
+  textarea,
+  select {
     display: none !important;
   }
 
-  body {
+  html, body {
     background-color: #ffffff !important;
+    background: #ffffff !important;
     margin: 0 !important;
     padding: 0 !important;
+    color: #000000 !important;
+  }
+
+  /* Garante que a área do recibo e seus contêineres fiquem visíveis na impressão */
+  main, section {
+    display: block !important;
+    width: 100% !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
   }
 
   #receipt-print-area {
+    display: block !important;
+    visibility: visible !important;
     box-shadow: none !important;
     border: none !important;
     margin: 0 auto !important;
-    padding: 20mm 15mm !important;
+    padding: 10mm 15mm !important;
     width: 100% !important;
     max-width: 100% !important;
+    background: #ffffff !important;
     page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   @page {
-    size: auto;
-    margin: 10mm;
+    size: landscape;
+    margin: 8mm;
   }
 }
-
