@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 /**
  * Converte um valor numérico monetário (BRL) para sua representação por extenso em Português do Brasil.
  * Exemplo: 1500 -> "um mil e quinhentos reais"

@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 import html2canvas from 'html2canvas-pro';
 
 /**

@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 export interface ReceiptData {
   numeroRecibo: string;
   valor: number;

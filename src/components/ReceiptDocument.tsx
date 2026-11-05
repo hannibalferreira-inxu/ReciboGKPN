@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 import React, { forwardRef } from 'react';
 import { ReceiptData } from '../types/receipt';
 import { formatarMoedaBRL } from '../utils/numberToWordsPtBr';

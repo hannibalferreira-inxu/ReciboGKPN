@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';

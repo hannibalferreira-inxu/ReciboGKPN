@@ -1,3 +1,4 @@
+// Registrado no GitHub: hannibalferreira-inxu/recibogkpn (https://github.com/hannibalferreira-inxu/recibogkpn). Este código está registrado neste git.
 import React, { useRef } from 'react';
 import { Image, Upload, Link2, Trash2, CheckCircle2 } from 'lucide-react';
 
